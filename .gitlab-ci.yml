@@ -1,0 +1,69 @@
+cache:
+  paths:
+    - .m2/repository
+    - target 
+    - node_module
+
+stages: 
+  - compile
+  - test
+  - dockerize
+
+compile-java:
+  image: maven:latest
+  stage: compile
+  script: 
+    - mvn clean install -DskipTest
+
+compile-abc:
+  image: maven:latest
+  stage: compile
+  script: 
+    - mvn clean install -DskipTest
+  only:
+    - abc
+
+test-java:
+  image: maven:latest
+  stage: test 
+  script: 
+    - mvn test
+
+compile-javascript:
+  image: node:latest
+  stage: compile
+  script: 
+    - cd jsproject
+    - npm i 
+    - npm run build
+
+test-javascript:
+  image: node:latest
+  stage: test
+  script: 
+    - cd jsproject
+    - npm run test
+
+docker-java: 
+  image: docker:latest
+  stage: dockerize
+  services: 
+    - docker:dind
+  before_script:
+    - docker login -u $DOCKERLOGIN -p $DOCKERMDP
+  script: 
+    - docker build -t maryo42/demojava:1.0 .
+    - docker push maryo42/demojava:1.0
+
+docker-javascript: 
+  image: docker:latest
+  stage: dockerize
+  services: 
+    - docker:dind
+  before_script:
+    - docker login -u $DOCKERLOGIN -p $DOCKERMDP
+  script: 
+    - cd jsproject
+    - docker build -t maryo42/demojavascript:1.0 .
+    - docker push maryo42/demojavascript:1.0    
+
